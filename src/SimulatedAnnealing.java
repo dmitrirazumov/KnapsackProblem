@@ -7,7 +7,7 @@ class SimulatedAnnealing {
 
     private final static double INITIAL_TEMPERATURE = 100.0;
     private final static double FINAL_TEMPERATURE = 0.5;
-    private final static double ALPHA = 0.85;
+    private final static double ALPHA = 0.98;
     private final static int STEPS = 100;
 
     private final int number;
@@ -114,7 +114,7 @@ class SimulatedAnnealing {
 
         int bestCost = computeCost(weightCost, solution);
 
-        while(true) {
+        do {
             currentCost = computeCost(weightCost, best);
             for (int i = 0; i < STEPS; i++) {
                 solutions = tweakSolutions(weightCost, current, maxWeight);
@@ -132,8 +132,7 @@ class SimulatedAnnealing {
                 }
             }
             temperature *= ALPHA;
-            if ((temperature <= FINAL_TEMPERATURE) || (currentCost >= bestCost)) break;
-        }
+        } while ((temperature > FINAL_TEMPERATURE) || (currentCost < bestCost));
 
         return best;
     }

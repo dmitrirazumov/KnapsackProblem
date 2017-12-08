@@ -1,44 +1,44 @@
 import java.util.ArrayList;
 import java.util.Random;
 
-class KnapsackProblem {
+class SimulatedAnnealing {
 
     private Random random = new Random();
 
     private final static double INITIAL_TEMPERATURE = 100.0;
     private final static double FINAL_TEMPERATURE = 0.5;
-    private final static double ALPHA = 0.98;
+    private final static double ALPHA = 0.85;
     private final static int STEPS = 100;
 
     private final int number;
     private final int capacity;
-    private final ArrayList<Couple> weightCost;
+    private final ArrayList<Types.Couple> weightCost;
 
-    KnapsackProblem(int number, int capacity, ArrayList<Couple> weightCost) {
+    SimulatedAnnealing(int number, int capacity, ArrayList<Types.Couple> weightCost) {
         this.number = number;
         this.capacity = capacity;
         this.weightCost = weightCost;
     }
 
-    ArrayList<Answer> result() {
+    ArrayList<Types.Answer> resultSA() {
 
-        ArrayList<Answer> answers = new ArrayList<>();
+        ArrayList<Types.Answer> answers = new ArrayList<>();
 
-        double bestCost;
+        int bestCost;
         int[] answer = new int[number];
         ArrayList<Integer> solution, startSolution;
 
         startSolution = initSolution(weightCost, capacity);
-        solution = simulatedAnnealing(weightCost, startSolution, capacity);
+        solution = simulation(weightCost, startSolution, capacity);
         bestCost = computeCost(weightCost, solution);
 
         for (Integer element : solution) answer[element] = 1;
 
-        answers.add(new Answer(bestCost, answer));
+        answers.add(new Types.Answer(bestCost, answer));
         return answers;
     }
 
-    private ArrayList<Integer> initSolution(ArrayList<Couple> weightCost, double maxWeight) {
+    private ArrayList<Integer> initSolution(ArrayList<Types.Couple> weightCost, int maxWeight) {
 
         int index;
         Integer selectedPosition;
@@ -46,7 +46,7 @@ class KnapsackProblem {
         ArrayList<Integer> solution = new ArrayList<>();
         ArrayList<Integer> allowedPositions = new ArrayList<>(weightCost.size());
 
-        for (Couple element : weightCost) allowedPositions.add(weightCost.indexOf(element));
+        for (Types.Couple element : weightCost) allowedPositions.add(weightCost.indexOf(element));
 
         while (allowedPositions.size() > 0) {
             index = random.nextInt(allowedPositions.size());
@@ -59,9 +59,9 @@ class KnapsackProblem {
         return solution;
     }
 
-    private double computeWeight(ArrayList<Couple> weightCost, ArrayList<Integer> solution) {
+    private int computeWeight(ArrayList<Types.Couple> weightCost, ArrayList<Integer> solution) {
 
-        double weight = 0.0;
+        int weight = 0;
 
         for (Integer element : solution) {
             weight += weightCost.get(element).getWeight();
@@ -69,9 +69,9 @@ class KnapsackProblem {
         return weight;
     }
 
-    private double computeCost(ArrayList<Couple> weightCost, ArrayList<Integer> solution) {
+    private int computeCost(ArrayList<Types.Couple> weightCost, ArrayList<Integer> solution) {
 
-        double cost = 0.0;
+        int cost = 0;
 
         for (Integer element : solution) {
             cost += weightCost.get(element).getCost();
@@ -79,7 +79,7 @@ class KnapsackProblem {
         return cost;
     }
 
-    private ArrayList<ArrayList<Integer>> tweakSolutions(ArrayList<Couple> weightCost, ArrayList<Integer> solution, double maxWeight) {
+    private ArrayList<ArrayList<Integer>> tweakSolutions(ArrayList<Types.Couple> weightCost, ArrayList<Integer> solution, int maxWeight) {
 
         ArrayList<ArrayList<Integer>> solutions = new ArrayList<>();
         for (int i = 0; i < weightCost.size(); i++) {
@@ -101,20 +101,20 @@ class KnapsackProblem {
         return solutions;
     }
 
-    private ArrayList<Integer> simulatedAnnealing(ArrayList<Couple> weightCost, ArrayList<Integer> solution, double maxWeight) {
+    private ArrayList<Integer> simulation(ArrayList<Types.Couple> weightCost, ArrayList<Integer> solution, int maxWeight) {
 
         double temperature = INITIAL_TEMPERATURE;
 
         int index;
-        double currentCost, delta;
+        int currentCost, delta;
         ArrayList<Integer> best = new ArrayList<>(solution);
         ArrayList<Integer> current = new ArrayList<>(solution);
         ArrayList<ArrayList<Integer>> solutions;
         ArrayList<Integer> test;
 
-        double bestCost = computeCost(weightCost, solution);
+        int bestCost = computeCost(weightCost, solution);
 
-        do {
+        while(true) {
             currentCost = computeCost(weightCost, best);
             for (int i = 0; i < STEPS; i++) {
                 solutions = tweakSolutions(weightCost, current, maxWeight);
@@ -126,13 +126,14 @@ class KnapsackProblem {
                     bestCost = computeCost(weightCost, best);
                     current = new ArrayList<>(test);
                 } else {
-                    if (Math.exp(delta / temperature) > Math.random()) {
+                    if (Math.exp(-delta / temperature) > Math.random()) {
                         current = new ArrayList<>(test);
                     }
                 }
             }
             temperature *= ALPHA;
-        } while ((temperature > FINAL_TEMPERATURE) || (currentCost < bestCost));
+            if ((temperature <= FINAL_TEMPERATURE) || (currentCost >= bestCost)) break;
+        }
 
         return best;
     }
